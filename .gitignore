@@ -1,0 +1,12 @@
+# GENERAL
+node_modules/
+.env
+
+# BACKEND
+.npm
+package-lock.json
+.cache/
+
+# FRONTEND
+dist/
+build/
