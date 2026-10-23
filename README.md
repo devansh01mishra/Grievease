@@ -9,7 +9,7 @@ accountable without exposing the contents of private complaints in the public sp
 
 ## UML DIAGRAM
 
-![Diagramatic representation of Users and their functions](image.png)
+![Diagramatic representation of Users and their functions](uml.png)
 
 ## FRONTEND
 
