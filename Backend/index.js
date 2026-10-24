@@ -14,7 +14,7 @@ const port = process.env.PORT
 app.use(express.json())
 
 // Setting up User router
-app.use('/user', userRouter)
+app.use('/', userRouter)
 
 // Setting up Department router
 app.use('/dept', deptRouter)
