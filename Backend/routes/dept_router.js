@@ -9,4 +9,8 @@ deptRouter.get("/", (req, res) => {
     })
 })
 
+deptRouter.post("/", (req, res) => {
+      
+})
+
 export default deptRouter;

@@ -10,4 +10,9 @@ userRouter.get("/", (req, res) => {
     })
 })
 
+userRouter.post("/", (req, res) => {
+      const { name, id, password, position } = req.body;
+      const hashPassword = hash()
+})
+
 export default userRouter;
