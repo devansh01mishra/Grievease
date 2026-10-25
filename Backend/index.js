@@ -1,6 +1,5 @@
 import express from "express"
 
-
 import userRouter from "./routes/user_router.js"
 import deptRouter from "./routes/dept_router.js"
 import sysaRouter from "./routes/sysa_router.js"
