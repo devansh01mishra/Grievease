@@ -32,15 +32,19 @@ deptRouter.post("/", async (req, res) => {
     });
 })
 
-deptRouter.get("/", (req, res) => {
+deptRouter.get("/grievances", (req, res) => {
     // TODO: to return grievances particular to this department and permitted to the logged in employ of the department
 })
 
-deptRouter.put("/:id", (req, res) => {
+deptRouter.get("/notifactions", (req, res) => {
+    // TODO: to return notifactions for grievances particular to this department and permitted to the logged in employ of the department
+})
+
+deptRouter.put("/grievances/:id", (req, res) => {
     // TODO: to work on a grievance with id if permitted
 })
 
-deptRouter.delete("/:id", (req, res) => {
+deptRouter.delete("/grievances/:id", (req, res) => {
     // TODO: to delete on a grievance with id if permitted
 })
 

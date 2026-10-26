@@ -30,8 +30,12 @@ userRouter.post("/", async (req, res) => {
     });
 })
 
-userRouter.get("/", (req, res) => {
+userRouter.get("/grievances", (req, res) => {
     // TODO : return grievances posted by this user
+})
+
+userRouter.get("/notifications", (req, res) => {
+    // TODO : return notifications for grievances posted by this user
 })
 
 
