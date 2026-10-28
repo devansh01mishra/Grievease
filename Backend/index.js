@@ -11,10 +11,18 @@ import { startEscalationWorker, stopEscalationWorker } from './src/services/esca
 import { HttpError } from './src/utils/httpError.js';
 
 const app = express();
-const allowedOrigin = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.disable('x-powered-by');
-app.use(cors({ origin: allowedOrigin }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new HttpError(403, `Origin ${origin} is not allowed by CORS.`));
+  }
+}));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
@@ -54,6 +62,9 @@ app.use(async (error, req, res, _next) => {
 });
 
 export async function startServer() {
+  if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_ORIGIN?.trim()) {
+    throw new Error('FRONTEND_ORIGIN must be configured for production deployments.');
+  }
   if (!process.env.MONGO_URI) throw new Error('MONGO_URI must be configured.');
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
     throw new Error('JWT_SECRET must be configured with at least 32 characters.');

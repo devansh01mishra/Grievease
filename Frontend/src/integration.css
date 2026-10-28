@@ -1,0 +1,240 @@
+.integration-loading,
+.integration-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    padding: 48px;
+    color: #777c93
+}
+
+.integration-empty {
+    min-height: 180px
+}
+
+.integration-empty strong {
+    color: #30334d
+}
+
+.integration-error,
+.integration-notice,
+.integration-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 15px;
+    margin-bottom: 16px;
+    border-radius: 9px;
+    font-size: 13px
+}
+
+.integration-error {
+    color: #8f2f38;
+    background: #fff0f0;
+    border: 1px solid #f3cbce
+}
+
+.integration-error button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 20px
+}
+
+.integration-notice {
+    color: #176b4f;
+    background: #eaf8f1;
+    border: 1px solid #c9ead9
+}
+
+.integration-progress {
+    justify-content: flex-start;
+    color: #635bdb;
+    background: #f1f0ff
+}
+
+.integration-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 17px
+}
+
+.integration-detail,
+.integration-action {
+    padding: 22px;
+    margin-top: 18px
+}
+
+.integration-detail h2,
+.integration-action h2 {
+    margin: 0 0 15px;
+    font: 700 17px Manrope, sans-serif
+}
+
+.integration-description {
+    color: #686d84;
+    line-height: 1.75;
+    white-space: pre-wrap
+}
+
+.integration-metadata {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #ececf4
+}
+
+.integration-metadata div {
+    display: grid;
+    gap: 6px
+}
+
+.integration-metadata small {
+    color: #85899c;
+    font-size: 11px
+}
+
+.integration-metadata strong {
+    font-size: 13px
+}
+
+.integration-form {
+    display: grid;
+    gap: 14px;
+    max-width: 620px
+}
+
+.integration-form label {
+    display: grid;
+    gap: 7px;
+    color: #555a72;
+    font-size: 12px;
+    font-weight: 700
+}
+
+.integration-form input,
+.integration-form select,
+.integration-form textarea,
+.integration-modal .grievance-form input,
+.integration-modal .grievance-form select,
+.integration-modal .grievance-form textarea {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #dedfec;
+    border-radius: 8px;
+    background: #fff;
+    color: #30334d
+}
+
+.integration-form textarea,
+.integration-modal .grievance-form textarea {
+    min-height: 110px;
+    resize: vertical
+}
+
+.integration-form.inline {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 16px
+}
+
+.integration-form.inline label {
+    flex: 1
+}
+
+.integration-checkbox {
+    display: flex !important;
+    align-items: center;
+    grid-template-columns: auto 1fr
+}
+
+.integration-checkbox input {
+    width: auto
+}
+
+.integration-audit {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #ececf4
+}
+
+.integration-audit>strong {
+    display: block;
+    margin-bottom: 10px
+}
+
+.integration-audit article,
+.integration-official {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid #f0f0f6;
+    font-size: 12px
+}
+
+.integration-audit article span,
+.integration-official span {
+    color: #777c93
+}
+
+.integration-attachments {
+    margin-top: 18px
+}
+
+.integration-attachments h3,
+.integration-action h3 {
+    margin: 18px 0 8px;
+    font-size: 14px
+}
+
+.integration-modal .grievance-form {
+    display: grid;
+    gap: 14px
+}
+
+.integration-modal .grievance-form>label {
+    display: grid;
+    gap: 7px;
+    color: #555a72;
+    font-size: 12px;
+    font-weight: 700
+}
+
+.integration-modal .modal-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px
+}
+
+.integration-modal .modal-head h2 {
+    margin: 6px 0
+}
+
+.integration-modal .modal-head p {
+    margin: 0;
+    color: #777c93;
+    font-size: 12px
+}
+
+@media(max-width:760px) {
+    .integration-metadata {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+
+    .integration-form.inline {
+        align-items: stretch;
+        flex-direction: column
+    }
+
+    .integration-official {
+        flex-direction: column
+    }
+}

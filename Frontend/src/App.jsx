@@ -1,41 +1,407 @@
-import React, { useMemo, useState } from 'react';
-import { ShieldCheck, Menu, X, ArrowRight, ArrowUpRight, LayoutDashboard, FileText, Plus, Search, Bell, Settings, LogOut, ChevronDown, Clock3, CheckCircle2, AlertCircle, Users, ClipboardList, Activity, LockKeyhole, Paperclip, Filter, Eye, MoreHorizontal, Download, Check, CircleHelp, Landmark, Sparkles, Hash, CalendarDays, MessageSquare, UserRound, SlidersHorizontal } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ArrowLeft, ArrowRight, Bell, CheckCircle2, Clock3, FileText,
+  LogOut, Menu, Plus, Search, ShieldCheck, UserPlus, X
+} from 'lucide-react';
+import LandingPage from './LandingPage.jsx';
+import LoginPage from './LoginPage.jsx';
+import {
+  apiRequest, clearAuthToken, downloadFile, getStoredAuthToken
+} from './api.js';
 
-const seedCases = [
-  {id:'GRV-2026-0148',title:'Hostel water supply issue',category:'Hostel & Facilities',status:'In Review',priority:'High',date:'24 Oct 2026',updated:'2 hours ago',owner:'Facilities Office',description:'The water supply on the third floor has been intermittent for the last four days. Several students have reported the issue, especially in the morning.',student:'Aarav Sharma',department:'Facilities',due:'29 Oct 2026',comments:3},
-  {id:'GRV-2026-0142',title:'Library access after 9 PM',category:'Academic Services',status:'Assigned',priority:'Medium',date:'22 Oct 2026',updated:'Yesterday',owner:'Student Affairs',description:'Requesting an extension of library access during the examination period.',student:'Aarav Sharma',department:'Student Affairs',due:'31 Oct 2026',comments:2},
-  {id:'GRV-2026-0131',title:'Incorrect mess bill amount',category:'Fees & Payments',status:'Resolved',priority:'Low',date:'18 Oct 2026',updated:'20 Oct 2026',owner:'Accounts Office',description:'The monthly mess bill included a duplicate charge. The amount has been reviewed and corrected.',student:'Aarav Sharma',department:'Accounts',due:'23 Oct 2026',comments:4},
-  {id:'GRV-2026-0127',title:'Classroom projector not working',category:'Infrastructure',status:'Filed',priority:'Medium',date:'16 Oct 2026',updated:'4 days ago',owner:'Unassigned',description:'The projector in Room B-204 has not been working during lectures.',student:'Riya Das',department:'Infrastructure',due:'30 Oct 2026',comments:0},
-  {id:'GRV-2026-0119',title:'Request for accessible ramp',category:'Accessibility',status:'Overdue',priority:'High',date:'12 Oct 2026',updated:'6 days ago',owner:'Campus Operations',description:'A ramp is needed at the side entrance of the academic block to improve access.',student:'Anonymous student',department:'Campus Operations',due:'21 Oct 2026',comments:5},
-];
-const statusClass = s => s.toLowerCase().replaceAll(' ','-');
-const Icon = ({I,size=18,...props}) => <I size={size} strokeWidth={1.8} {...props}/>;
-function Brand({light=false}) { return <div className={`brand ${light?'brand-light':''}`}><span className="brand-mark"><ShieldCheck size={22}/></span><span>grievease<span className="brand-dot">.</span></span></div> }
-function Badge({children}) { return <span className={`badge ${statusClass(children)}`}>{children}</span> }
-function App(){
- const [page,setPage]=useState('landing'); const [role,setRole]=useState('student'); const [cases,setCases]=useState(seedCases); const [selected,setSelected]=useState(seedCases[0].id); const [query,setQuery]=useState(''); const [filter,setFilter]=useState('All'); const [modal,setModal]=useState(false); const [toast,setToast]=useState(''); const [mobileNav,setMobileNav]=useState(false); const [form,setForm]=useState({title:'',category:'Hostel & Facilities',description:'',priority:'Medium',anonymous:false}); const [detailTab,setDetailTab]=useState('Overview');
- const activeCase=cases.find(c=>c.id===selected)||cases[0];
- const notify=(msg)=>{setToast(msg);setTimeout(()=>setToast(''),2800)};
- const go=(p)=>{setPage(p);setMobileNav(false);window.scrollTo({top:0,behavior:'smooth'});};
- const openCase=(id)=>{setSelected(id);setDetailTab('Overview');go('details')};
- const visibleCases=useMemo(()=>role==='student'?cases.filter(c=>c.student==='Aarav Sharma'):role==='official'?cases.filter(c=>c.owner==='Facilities Office'||c.department==='Facilities'):cases,[cases,role]);
- const filtered=useMemo(()=>visibleCases.filter(c=>`${c.id} ${c.title} ${c.category} ${c.owner}`.toLowerCase().includes(query.toLowerCase())&&(filter==='All'||c.status===filter)),[visibleCases,query,filter]);
- const submitCase=(e)=>{e.preventDefault();const n={id:`GRV-2026-${String(149+cases.length-5).padStart(4,'0')}`,title:form.title,category:form.category,status:'Filed',priority:form.priority,date:'28 Oct 2026',updated:'Just now',owner:'Unassigned',description:form.description,student:form.anonymous?'Anonymous student':'Aarav Sharma',department:'Unassigned',due:'04 Nov 2026',comments:0};setCases([n,...cases]);setSelected(n.id);setForm({title:'',category:'Hostel & Facilities',description:'',priority:'Medium',anonymous:false});setModal(false);go('details');notify('Grievance submitted. Your tracking ID is '+n.id);};
- const updateStatus=(status)=>{setCases(cases.map(c=>c.id===activeCase.id?{...c,status,updated:'Just now'}:c));notify(`Case status updated to ${status}`)};
- const shellPages=['student','grievances','official','admin','details'];
- if(!shellPages.includes(page)) return <><header className="public-nav"><Brand/><div className="public-links"><a href="#how">How it works</a><a href="#privacy">Privacy & trust</a><button className="btn btn-quiet" onClick={()=>go('login')}>Sign in</button><button className="btn btn-primary" onClick={()=>go('login')}>Open portal <ArrowRight size={16}/></button></div><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button></header>{mobileNav&&<div className="mobile-links"><button onClick={()=>go('login')}>Sign in</button><button onClick={()=>go('login')}>Open portal</button></div>}{page==='landing'?<main className="landing"><section className="hero"><div className="hero-copy"><div className="eyebrow"><span className="pulse-dot"/> A BETTER WAY TO BE HEARD</div><h1>Your concern.<br/><span>Clear progress.</span><br/>Real accountability.</h1><p className="hero-lede">A transparent, secure place to raise campus concerns and follow every step until they’re resolved.</p><div className="hero-actions"><button className="btn btn-primary btn-lg" onClick={()=>go('login')}>Raise a grievance <ArrowRight size={17}/></button><button className="btn btn-outline btn-lg" onClick={()=>go('login')}>Track a case <ArrowUpRight size={17}/></button></div><div className="trust-row"><div className="avatar-stack"><span>A</span><span>R</span><span>S</span><span>+</span></div><span>Designed around <b>student trust</b> and accountability</span></div></div><div className="hero-visual"><div className="visual-glow"/><div className="mock-window"><div className="mock-top"><div className="mock-dots"><i/><i/><i/></div><span>MY GRIEVANCES</span><span className="mock-lock"><LockKeyhole size={13}/> Secure</span></div><div className="mock-greeting"><div><small>GOOD AFTERNOON, AARAV</small><h3>Your concerns, in one place.</h3></div><div className="mock-avatar">AS</div></div><div className="mock-stats"><div><small>Active cases</small><strong>02</strong><span className="stat-green">↑ All tracked</span></div><div><small>Resolved</small><strong>06</strong><span>this semester</span></div></div><div className="mock-case"><div className="mock-case-icon"><Landmark size={17}/></div><div className="mock-case-text"><b>Hostel water supply issue</b><small>GRV-2026-0148 · 24 Oct</small><div className="mini-progress"><span/></div><small className="progress-caption">In review <span>Step 3 of 4</span></small></div><Badge>In Review</Badge></div><div className="mock-case muted-case"><div className="mock-case-icon"><FileText size={17}/></div><div className="mock-case-text"><b>Incorrect mess bill amount</b><small>GRV-2026-0131 · 18 Oct</small></div><Badge>Resolved</Badge></div><div className="mock-footer"><ShieldCheck size={14}/> Every update is recorded. Every case has a trail.</div></div><div className="float-card float-top"><span className="float-icon green"><CheckCircle2 size={17}/></span><span><b>Update recorded</b><small>Just now · Secure audit trail</small></span></div><div className="float-card float-bottom"><span className="float-icon purple"><LockKeyhole size={17}/></span><span><b>Your identity is protected</b><small>Privacy-first by design</small></span></div></div></section><section className="feature-strip" id="how"><div className="feature"><span className="feature-icon"><Hash/></span><div><b>One tracking ID</b><p>Know exactly where your case stands.</p></div></div><div className="feature"><span className="feature-icon"><Activity/></span><div><b>Visible progress</b><p>Updates that keep you in the loop.</p></div></div><div className="feature"><span className="feature-icon"><ShieldCheck/></span><div><b>Accountability built in</b><p>A recorded trail of case activity.</p></div></div></section><section className="how-section" id="privacy"><div className="section-heading"><span className="eyebrow">SIMPLE BY DESIGN</span><h2>From concern to resolution.</h2><p>No chasing people. No wondering what happened next.</p></div><div className="steps"><div><span>01</span><h3>Tell us what happened</h3><p>Submit your concern with the details needed to help the right team act.</p></div><div><span>02</span><h3>Follow every update</h3><p>Use your unique tracking ID to see assignment, review and progress.</p></div><div><span>03</span><h3>Get a clear outcome</h3><p>See the resolution and the record of actions taken on your case.</p></div></div></section><footer className="public-footer"><Brand/><span>© 2026 Grievease · Built for trust, designed for clarity.</span><button onClick={()=>go('login')}>Access the portal <ArrowRight size={14}/></button></footer></main>:<div className="login-wrap"><div className="login-art"><div className="login-art-content"><Brand light/><div className="login-quote">“Being heard should never be the hard part.”</div><p>Raise concerns with confidence. Follow progress with clarity. Hold the process accountable.</p><div className="login-art-foot"><ShieldCheck size={16}/> Privacy-conscious. Transparent. Traceable.</div></div></div><div className="login-form-side"><button className="back-link" onClick={()=>go('landing')}>← Back to home</button><div className="login-form"><span className="eyebrow">WELCOME TO GRIEVEASE</span><h1>Sign in to continue</h1><p>Choose a demo workspace to explore the portal.</p><label>Email address</label><input defaultValue="aarav@campus.edu" type="email"/><label>Password</label><input defaultValue="demo-password" type="password"/><div className="form-between"><label className="check-label"><input type="checkbox" defaultChecked/> Remember me</label><button className="text-button" onClick={()=>notify('Ask your campus administrator to reset access.')}>Forgot password?</button></div><button className="btn btn-primary full-btn" onClick={()=>{setRole('student');go('student')}}>Sign in <ArrowRight size={16}/></button><div className="demo-divider"><span/> DEMO ROLE PREVIEW <span/></div><p className="role-hint">For this frontend preview, jump into a workspace:</p><div className="role-buttons"><button onClick={()=>{setRole('student');go('student')}}><UserRound size={17}/> Student <ArrowRight size={14}/></button><button onClick={()=>{setRole('official');go('official')}}><ClipboardList size={17}/> Official <ArrowRight size={14}/></button><button onClick={()=>{setRole('admin');go('admin')}}><Settings size={17}/> Admin <ArrowRight size={14}/></button></div><small className="demo-note"><LockKeyhole size={13}/> Demo only — connect authentication before production.</small></div></div></div>}<Toast message={toast}/></>;
- return <div className="app-shell"><aside className={`sidebar ${mobileNav?'sidebar-open':''}`}><div className="sidebar-head"><Brand/><button className="icon-btn sidebar-close" onClick={()=>setMobileNav(false)}><X size={18}/></button></div><div className="workspace-label">WORKSPACE</div><div className="role-switch"><span className="role-avatar">{role==='student'?'AS':role==='official'?'FO':'AD'}</span><div><b>{role==='student'?'Aarav Sharma':role==='official'?'Facilities Office':'Portal Admin'}</b><small>{role==='student'?'Student account':role==='official'?'Official workspace':'Administrator'}</small></div><ChevronDown size={15}/></div><nav className="side-nav"><span className="nav-label">MENU</span>{role==='student'&&<><button className={page==='student'?'active':''} onClick={()=>go('student')}><LayoutDashboard size={18}/> My dashboard</button><button className={page==='grievances'?'active':''} onClick={()=>go('grievances')}><FileText size={18}/> My grievances <span className="nav-count">{cases.filter(c=>c.student==='Aarav Sharma'&&c.status!=='Resolved').length}</span></button></>}{role==='official'&&<button className={page==='official'?'active':''} onClick={()=>go('official')}><ClipboardList size={18}/> Assigned cases</button>}{role==='admin'&&<button className={page==='admin'?'active':''} onClick={()=>go('admin')}><Settings size={18}/> Admin & audit</button>}<span className="nav-label nav-label-lower">YOUR SPACE</span><button onClick={()=>notify('Notifications are up to date.')}><Bell size={18}/> Notifications <span className="notification-dot"/></button><button onClick={()=>notify('Settings are part of the backend integration.')}><Settings size={18}/> Settings</button></nav><div className="sidebar-bottom"><div className="help-card"><span className="help-icon"><CircleHelp size={17}/></span><b>Need a hand?</b><p>Learn how the grievance process works.</p><button onClick={()=>go('landing')}>Help centre <ArrowRight size={13}/></button></div><button className="profile-row" onClick={()=>go('login')}><span className="profile-avatar">{role==='student'?'AS':role==='official'?'FO':'AD'}</span><span><b>{role==='student'?'Aarav Sharma':role==='official'?'Facilities Office':'Portal Admin'}</b><small>Demo account</small></span><LogOut size={17}/></button></div></aside><div className="main-area"><header className="topbar"><div className="topbar-left"><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div className="breadcrumb">Portal <span>/</span> <b>{page==='student'?'Dashboard':page==='grievances'?'My grievances':page==='official'?'Official workspace':page==='admin'?'Admin & audit':'Grievance details'}</b></div></div><div className="topbar-actions"><span className="secure-label"><LockKeyhole size={14}/> Secure workspace</span><button className="icon-btn notification-btn" onClick={()=>notify('You are all caught up.')}><Bell size={18}/><i/></button><span className="top-avatar">{role==='student'?'AS':role==='official'?'FO':'AD'}</span></div></header><main className="page-content">
- {page==='student'&&<><div className="page-title-row"><div><div className="eyebrow">TUESDAY, 28 OCTOBER 2026</div><h1>Good afternoon, Aarav <span className="wave">✳</span></h1><p>Here’s what’s happening with your grievances.</p></div><button className="btn btn-primary" onClick={()=>setModal(true)}><Plus size={17}/> New grievance</button></div><div className="stat-grid"><Stat icon={FileText} label="Total grievances" value={cases.filter(c=>c.student==='Aarav Sharma').length.toString().padStart(2,'0')} note="Across this semester"/><Stat icon={Clock3} label="In progress" value={cases.filter(c=>c.student==='Aarav Sharma'&&!['Resolved'].includes(c.status)).length.toString().padStart(2,'0')} note="Being reviewed"/><Stat icon={CheckCircle2} label="Resolved" value={cases.filter(c=>c.student==='Aarav Sharma'&&c.status==='Resolved').length.toString().padStart(2,'0')} note="Closed with an outcome"/><Stat icon={AlertCircle} label="Needs attention" value={cases.filter(c=>c.student==='Aarav Sharma'&&c.status==='Overdue').length.toString().padStart(2,'0')} note="Check case updates" alert/></div><div className="content-grid"><section className="panel recent-panel"><div className="panel-head"><div><h2>Recent grievances</h2><p>Keep track of your latest submissions.</p></div><button className="text-button" onClick={()=>go('grievances')}>View all <ArrowRight size={14}/></button></div><CaseTable cases={cases.filter(c=>c.student==='Aarav Sharma').slice(0,4)} onOpen={openCase}/></section><section className="panel process-panel"><div className="panel-head"><div><h2>How it works</h2><p>Every step, made visible.</p></div><span className="round-icon"><Activity size={17}/></span></div><div className="process-list"><div className="process-step done"><span><Check size={14}/></span><div><b>Grievance filed</b><small>Your case is recorded with a unique ID.</small></div></div><div className="process-step current"><span>2</span><div><b>Assigned to the right team</b><small>A responsible office is identified.</small></div></div><div className="process-step"><span>3</span><div><b>Under review</b><small>The team investigates the concern.</small></div></div><div className="process-step"><span>4</span><div><b>Resolution</b><small>Outcome and closure are recorded.</small></div></div></div><div className="privacy-note"><ShieldCheck size={17}/><span><b>Your trust matters.</b><small>Actions are recorded in the case history.</small></span></div></section></div><section className="tip-banner"><div className="tip-spark"><Sparkles size={21}/></div><div><b>A useful tip</b><p>Include dates, locations and any relevant context to help the right team respond faster.</p></div><button className="btn btn-outline" onClick={()=>setModal(true)}>Submit a concern <ArrowRight size={15}/></button></section></>}
- {page==='grievances'&&<><div className="page-title-row"><div><div className="eyebrow">YOUR RECORDS</div><h1>My grievances</h1><p>Search your cases and follow their progress from one place.</p></div><button className="btn btn-primary" onClick={()=>setModal(true)}><Plus size={17}/> New grievance</button></div><div className="panel list-panel"><div className="list-tools"><div className="search-box"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by title or tracking ID..."/></div><div className="filter-wrap"><Filter size={16}/><select value={filter} onChange={e=>setFilter(e.target.value)}><option>All</option><option>Filed</option><option>Assigned</option><option>In Review</option><option>Resolved</option><option>Overdue</option></select></div><span className="result-count">{filtered.length} cases</span></div><CaseTable cases={filtered} onOpen={openCase}/>{filtered.length===0&&<div className="empty-state"><Search size={24}/><b>No matching grievances</b><p>Try another search term or status filter.</p></div>}</div></>}
- {page==='official'&&<><div className="page-title-row"><div><div className="eyebrow">OFFICIAL WORKSPACE</div><h1>Case management</h1><p>Review assigned cases, record progress and close the loop.</p></div><button className="btn btn-outline" onClick={()=>notify('Export will be available when the backend is connected.')}><Download size={16}/> Export report</button></div><div className="stat-grid"><Stat icon={ClipboardList} label="Open cases" value={visibleCases.filter(c=>c.status!=='Resolved').length.toString().padStart(2,'0')} note="Across all departments"/><Stat icon={Clock3} label="In review" value={visibleCases.filter(c=>c.status==='In Review').length.toString().padStart(2,'0')} note="Active investigation"/><Stat icon={AlertCircle} label="Overdue" value={visibleCases.filter(c=>c.status==='Overdue').length.toString().padStart(2,'0')} note="Needs immediate action" alert/><Stat icon={CheckCircle2} label="Resolved" value={visibleCases.filter(c=>c.status==='Resolved').length.toString().padStart(2,'0')} note="Completed cases"/></div><section className="panel list-panel"><div className="panel-head"><div><h2>Grievance queue</h2><p>Open a case to view its history and update its status.</p></div><div className="search-box compact-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search cases..."/></div></div><CaseTable cases={filtered} onOpen={openCase} official/></section><section className="panel integrity-panel"><span className="integrity-icon"><ShieldCheck size={22}/></span><div><b>Audit trail integrity</b><p>Case updates should be timestamped and appended to a tamper-evident audit log by the backend.</p></div><Badge>Design requirement</Badge></section></>}
- {page==='admin'&&<><div className="page-title-row"><div><div className="eyebrow">ADMINISTRATION</div><h1>Oversight & audit</h1><p>Monitor the grievance process and spot cases that need attention.</p></div><button className="btn btn-outline" onClick={()=>notify('Audit export requires backend integration.')}><Download size={16}/> Export audit log</button></div><div className="stat-grid"><Stat icon={FileText} label="Total cases" value={cases.length.toString().padStart(2,'0')} note="All recorded submissions"/><Stat icon={Users} label="Unassigned" value={cases.filter(c=>c.owner==='Unassigned').length.toString().padStart(2,'0')} note="Need a responsible office"/><Stat icon={AlertCircle} label="Overdue" value={visibleCases.filter(c=>c.status==='Overdue').length.toString().padStart(2,'0')} note="Past target date" alert/><Stat icon={CheckCircle2} label="Resolved" value={visibleCases.filter(c=>c.status==='Resolved').length.toString().padStart(2,'0')} note="Cases closed"/></div><div className="admin-grid"><section className="panel"><div className="panel-head"><div><h2>Assignment queue</h2><p>Cases awaiting ownership.</p></div><span className="round-icon"><Users size={17}/></span></div>{cases.filter(c=>c.owner==='Unassigned').map(c=><div className="assignment-row" key={c.id}><span className="case-mini-icon"><FileText size={17}/></span><span className="assignment-copy"><b>{c.title}</b><small>{c.id} · {c.category}</small></span><button className="btn btn-outline btn-small" onClick={()=>openCase(c.id)}>Assign / view</button></div>)}{cases.every(c=>c.owner!=='Unassigned')&&<p className="subtle">No cases waiting for assignment.</p>}</section><section className="panel"><div className="panel-head"><div><h2>Audit activity</h2><p>Illustrative recent events.</p></div><span className="round-icon"><Activity size={17}/></span></div><div className="audit-list"><AuditItem color="green" title="Case status updated" detail="GRV-2026-0148 · In Review" time="2 hours ago"/><AuditItem color="blue" title="New grievance filed" detail="GRV-2026-0148 · Hostel & Facilities" time="24 Oct, 10:24"/><AuditItem color="purple" title="Case marked resolved" detail="GRV-2026-0131 · Accounts Office" time="23 Oct, 16:10"/><AuditItem color="orange" title="Deadline exceeded" detail="GRV-2026-0119 · Campus Operations" time="21 Oct, 09:00"/></div></section></div><section className="panel list-panel"><div className="panel-head"><div><h2>All grievance records</h2><p>Administrative overview of cases and ownership.</p></div><div className="search-box compact-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search records..."/></div></div><CaseTable cases={filtered} onOpen={openCase} official/></section><div className="warning-note"><LockKeyhole size={18}/><span><b>Production reminder</b><p>Role checks, access to personal data, assignment actions and cryptographic audit verification must be enforced on the server—not only in this frontend.</p></span></div></>}
- {page==='details'&&<><button className="back-link in-app-back" onClick={()=>go(role==='official'?'official':role==='admin'?'admin':'grievances')}>← Back to {role==='official'?'case management':role==='admin'?'oversight':'my grievances'}</button><div className="detail-title-row"><div><div className="eyebrow">GRIEVANCE DETAILS <span className="crumb-dot">·</span> {activeCase.id}</div><h1>{activeCase.title}</h1><p>Submitted {activeCase.date} <span className="dot-sep">·</span> Updated {activeCase.updated}</p></div><Badge>{activeCase.status}</Badge></div><div className="detail-layout"><div className="detail-main"><section className="panel"><div className="detail-tabs"><button className={detailTab==='Overview'?'selected':''} onClick={()=>setDetailTab('Overview')}>Overview</button><button className={detailTab==='Activity'?'selected':''} onClick={()=>setDetailTab('Activity')}>Activity & audit trail</button></div>{detailTab==='Overview'?<div className="case-overview"><div className="detail-label">DESCRIPTION</div><p className="case-description">{activeCase.description}</p><div className="detail-divider"/><div className="detail-label">CASE INFORMATION</div><div className="info-grid"><Info label="Category" value={activeCase.category}/><Info label="Priority" value={activeCase.priority}/><Info label="Submitted by" value={activeCase.student}/><Info label="Assigned office" value={activeCase.owner}/><Info label="Target resolution" value={activeCase.due}/><Info label="Tracking ID" value={activeCase.id}/></div>{activeCase.student==='Anonymous student'&&<div className="privacy-note inline-privacy"><LockKeyhole size={17}/><span><b>Identity protected</b><small>This submission is marked anonymous in the demo.</small></span></div>}</div>:<div className="activity-timeline"><TimelineItem done title="Grievance submitted" detail="A tracking ID was generated for this concern." time={activeCase.date}/><TimelineItem done title="Case record created" detail="Submission stored in the case register." time={activeCase.date}/><TimelineItem active title={`Current status: ${activeCase.status}`} detail="Latest state shown in this demo workspace." time={activeCase.updated}/><TimelineItem title="Resolution recorded" detail="A final outcome will appear here when the case is closed." time="Pending"/></div>}</section><section className="panel comments-panel"><div className="panel-head"><div><h2>Case discussion</h2><p>Updates relevant to this grievance.</p></div><span className="comments-count"><MessageSquare size={15}/> {activeCase.comments} updates</span></div><div className="comment-item"><span className="comment-avatar">FO</span><div><div className="comment-meta"><b>Facilities Office</b><small>Official update · 2 hours ago</small></div><p>The issue has been forwarded to the maintenance team for inspection. We will update the case after the site check.</p></div></div><div className="comment-compose"><input placeholder="Add a note or ask for an update..." id="comment-input"/><button className="btn btn-primary btn-small" onClick={()=>{const el=document.getElementById('comment-input');if(el.value.trim()){notify('Comment saved in this demo session.');el.value='';}else notify('Write a note before sending.')}}>Send update</button></div></section></div><aside className="detail-side"><section className="panel status-panel"><div className="panel-head"><h2>Case progress</h2><span className="round-icon"><Activity size={16}/></span></div><div className="detail-progress"><div className="progress-track"><span style={{height:activeCase.status==='Resolved'?'100%':activeCase.status==='In Review'?'68%':activeCase.status==='Assigned'?'38%':'12%'}}/></div><div className="progress-steps"><div className={['Filed','Assigned','In Review','Resolved'].includes(activeCase.status)?'step-done':''}><b>Filed</b><small>Submission received</small></div><div className={['Assigned','In Review','Resolved'].includes(activeCase.status)?'step-done':''}><b>Assigned</b><small>Office identified</small></div><div className={['In Review','Resolved'].includes(activeCase.status)?'step-done':''}><b>In review</b><small>Concern being reviewed</small></div><div className={activeCase.status==='Resolved'?'step-done':''}><b>Resolved</b><small>Outcome recorded</small></div></div></div><div className="detail-divider"/><div className="side-meta"><span>Current status</span><Badge>{activeCase.status}</Badge></div><div className="side-meta"><span>Priority</span><b>{activeCase.priority}</b></div><div className="side-meta"><span>Target date</span><b>{activeCase.due}</b></div>{role!=='student'&&<><div className="detail-divider"/><label className="field-label">Update status</label><select className="status-select" value={activeCase.status} onChange={e=>updateStatus(e.target.value)}><option>Filed</option><option>Assigned</option><option>In Review</option><option>Resolved</option><option>Overdue</option></select><label className="field-label">Assign office</label><select className="status-select" value={activeCase.owner} onChange={e=>{setCases(cases.map(c=>c.id===activeCase.id?{...c,owner:e.target.value,department:e.target.value,updated:'Just now',status:c.status==='Filed'?'Assigned':c.status}:c));notify('Assignment updated in this demo.')}}><option>Unassigned</option><option>Facilities Office</option><option>Student Affairs</option><option>Accounts Office</option><option>Campus Operations</option><option>Infrastructure</option></select></>}</section><div className="privacy-note"><ShieldCheck size={18}/><span><b>Traceable by design</b><small>Important actions should be appended to a tamper-evident audit trail.</small></span></div></aside></div></>}
- </main><footer className="app-footer"><span>© 2026 Grievease</span><span><ShieldCheck size={13}/> A clearer process, from start to finish.</span><span>Frontend demo · Sample data</span></footer></div>{mobileNav&&<div className="mobile-scrim" onClick={()=>setMobileNav(false)}/>}<Toast message={toast}/>{modal&&<div className="modal-backdrop" onClick={e=>{if(e.target===e.currentTarget)setModal(false)}}><div className="modal"><div className="modal-head"><div><span className="eyebrow">NEW SUBMISSION</span><h2>Raise a grievance</h2><p>Share the details so your concern can reach the right team.</p></div><button className="icon-btn" onClick={()=>setModal(false)}><X size={19}/></button></div><form onSubmit={submitCase} className="grievance-form"><label>Grievance title <span>*</span><input required maxLength="100" placeholder="Briefly describe your concern" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label><div className="form-two"><label>Category <span>*</span><select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}><option>Hostel & Facilities</option><option>Academic Services</option><option>Fees & Payments</option><option>Infrastructure</option><option>Accessibility</option><option>Student Welfare</option><option>Other</option></select></label><label>Priority<select value={form.priority} onChange={e=>setForm({...form,priority:e.target.value})}><option>Low</option><option>Medium</option><option>High</option></select></label></div><label>What happened? <span>*</span><textarea required minLength="15" rows="5" placeholder="Include relevant dates, locations and context..." value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/><small className="field-help">Please avoid sharing passwords or unnecessary sensitive information.</small></label><label className="anonymous-option"><input type="checkbox" checked={form.anonymous} onChange={e=>setForm({...form,anonymous:e.target.checked})}/><span><b>Submit anonymously</b><small>Your name will be hidden in this demo record. Production anonymity needs backend support.</small></span></label><div className="modal-actions"><button type="button" className="btn btn-outline" onClick={()=>setModal(false)}>Cancel</button><button type="submit" className="btn btn-primary"><ShieldCheck size={16}/> Submit grievance</button></div></form></div></div>}</div>;
+const transitions = {
+  Submitted: ['Under Review', 'Rejected'],
+  'Under Review': ['In Progress', 'Rejected'],
+  'In Progress': ['Resolved', 'Rejected'],
+  Escalated: ['Under Review', 'In Progress', 'Resolved', 'Rejected'],
+  Resolved: [],
+  Rejected: []
+};
+
+function displayStatus(grievance) {
+  if (grievance.isPastDue && !['Resolved', 'Rejected'].includes(grievance.status)) return 'Overdue';
+  if (grievance.status === 'Submitted' && grievance.assignedTo) return 'Assigned';
+  return ({
+    Submitted: 'Filed',
+    'Under Review': 'In Review',
+    'In Progress': 'In Progress',
+    Resolved: 'Resolved',
+    Rejected: 'Rejected',
+    Escalated: 'Escalated'
+  })[grievance.status] || grievance.status;
 }
-function Stat({icon:I,label,value,note,alert}){return <div className="stat-card"><div className="stat-top"><span className={`stat-icon ${alert?'stat-alert':''}`}><I size={18}/></span><MoreHorizontal size={18} className="more-icon"/></div><div className="stat-value">{value}</div><div className="stat-label">{label}</div><div className={`stat-note ${alert?'note-alert':''}`}>{note}</div></div>}
-function CaseTable({cases,onOpen,official=false}){return <div className="table-scroll"><table className="case-table"><thead><tr><th>GRIEVANCE</th><th>STATUS</th><th>PRIORITY</th><th>{official?'ASSIGNED TO':'LAST UPDATE'}</th><th></th></tr></thead><tbody>{cases.map(c=><tr key={c.id} onClick={()=>onOpen(c.id)}><td><div className="table-title"><span className="table-file"><FileText size={16}/></span><span><b>{c.title}</b><small>{c.id} <span>·</span> {c.category}</small></span></div></td><td><Badge>{c.status}</Badge></td><td><span className={`priority priority-${c.priority.toLowerCase()}`}><i/>{c.priority}</span></td><td className="table-update">{official?c.owner:c.updated}</td><td><button className="row-action" onClick={e=>{e.stopPropagation();onOpen(c.id)}} aria-label="View grievance"><ArrowUpRight size={17}/></button></td></tr>)}</tbody></table></div>}
-function Info({label,value}){return <div className="info-item"><span>{label}</span><b>{value}</b></div>}
-function AuditItem({color,title,detail,time}){return <div className="audit-item"><span className={`audit-dot ${color}`}/><div><b>{title}</b><small>{detail}</small><time>{time}</time></div></div>}
-function TimelineItem({done,active,title,detail,time}){return <div className={`timeline-item ${done?'timeline-done':''} ${active?'timeline-active':''}`}><span className="timeline-marker">{done?<Check size={13}/>:null}</span><div><b>{title}</b><p>{detail}</p><small>{time}</small></div></div>}
-function Toast({message}){return message?<div className="toast"><CheckCircle2 size={17}/>{message}</div>:null}
+
+function formatDate(value) {
+  if (!value) return 'Not set';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Not set' : date.toLocaleDateString();
+}
+
+function toCase(grievance) {
+  return {
+    ...grievance,
+    id: grievance.ticketId,
+    statusLabel: displayStatus(grievance),
+    owner: grievance.assignedTo?.name || 'Unassigned',
+    studentName: grievance.student?.name || 'You',
+    createdLabel: formatDate(grievance.createdAt),
+    updatedLabel: formatDate(grievance.updatedAt),
+    deadlineLabel: formatDate(grievance.deadline)
+  };
+}
+
+function CaseTable({ cases, onOpen }) {
+  if (!cases.length) {
+    return <div className="integration-empty"><FileText size={23} /><strong>No grievances found</strong><span>Submitted cases will appear here.</span></div>;
+  }
+  return (
+    <div className="table-scroll">
+      <table className="case-table">
+        <thead><tr><th>GRIEVANCE</th><th>STATUS</th><th>PRIORITY</th><th>LAST UPDATED</th><th /></tr></thead>
+        <tbody>{cases.map((item) => (
+          <tr key={item.id} onClick={() => onOpen(item.id)}>
+            <td><div className="table-title"><span className="table-file"><FileText size={16} /></span><span><b>{item.title}</b><small>{item.id} · {item.category}</small></span></div></td>
+            <td><span className={`badge ${item.statusLabel.toLowerCase().replaceAll(' ', '-')}`}>{item.statusLabel}</span></td>
+            <td><span className={`priority priority-${item.priority.toLowerCase()}`}><i />{item.priority}</span></td>
+            <td className="table-update">{item.updatedLabel}</td>
+            <td><button className="row-action" type="button" onClick={(event) => { event.stopPropagation(); onOpen(item.id); }} aria-label={`View ${item.id}`}><ArrowRight size={17} /></button></td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function App() {
+  const [page, setPage] = useState('landing');
+  const [section, setSection] = useState('dashboard');
+  const [user, setUser] = useState(null);
+  const [cases, setCases] = useState([]);
+  const [selectedCase, setSelectedCase] = useState(null);
+  const [officials, setOfficials] = useState([]);
+  const [policy, setPolicy] = useState(null);
+  const [audit, setAudit] = useState(null);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('All');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [mobileNav, setMobileNav] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [form, setForm] = useState({ title: '', category: 'Hostel & Facilities', description: '', priority: 'Medium', attachments: [] });
+  const [statusNote, setStatusNote] = useState('');
+  const [nextStatus, setNextStatus] = useState('');
+  const [officialForm, setOfficialForm] = useState({ name: '', email: '', password: '', department: '' });
+  const [policyForm, setPolicyForm] = useState({ deadlineHours: '', escalateAfterHours: '', enabled: true });
+
+  const roleLabel = user?.role === 'administrator' ? 'Administrator' : user?.role === 'official' ? 'College official' : 'Student';
+
+  const loadCases = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await apiRequest('/grievances?limit=100&page=1');
+      setCases(result.grievances.map(toCase));
+      setError('');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const token = getStoredAuthToken();
+    if (!token) {
+      setSessionLoading(false);
+      return;
+    }
+    apiRequest('/auth/me')
+      .then(({ user: currentUser }) => {
+        setUser(currentUser);
+        setPage('portal');
+      })
+      .catch((requestError) => {
+        clearAuthToken();
+        setError(`Your saved session could not be restored. ${requestError.message}`);
+        setPage('login');
+      })
+      .finally(() => setSessionLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (user) loadCases();
+  }, [user, loadCases]);
+
+  useEffect(() => {
+    if (!user || user.role !== 'administrator') return;
+    Promise.all([
+      apiRequest('/admin/officials'),
+      apiRequest('/admin/escalation-policy')
+    ]).then(([officialResult, policyResult]) => {
+      setOfficials(officialResult.officials);
+      setPolicy(policyResult.policy);
+      setPolicyForm({
+        deadlineHours: policyResult.policy.deadlineHours,
+        escalateAfterHours: policyResult.policy.escalateAfterHours,
+        enabled: policyResult.policy.enabled
+      });
+    }).catch((requestError) => setError(requestError.message));
+  }, [user]);
+
+  const visibleCases = useMemo(() => cases.filter((item) => {
+    const matchesText = `${item.id} ${item.title} ${item.category} ${item.owner}`.toLowerCase().includes(query.toLowerCase());
+    const matchesStatus = filter === 'All' || item.statusLabel === filter;
+    return matchesText && matchesStatus;
+  }), [cases, filter, query]);
+
+  function showNotice(message) {
+    setNotice(message);
+    window.setTimeout(() => setNotice(''), 3500);
+  }
+
+  function openCase(ticketId) {
+    setError('');
+    setAudit(null);
+    setLoading(true);
+    apiRequest(`/grievances/${encodeURIComponent(ticketId)}`)
+      .then(({ grievance }) => {
+        setSelectedCase(toCase(grievance));
+        setNextStatus(transitions[grievance.status]?.[0] || '');
+        setSection('details');
+      })
+      .catch((requestError) => setError(requestError.message))
+      .finally(() => setLoading(false));
+  }
+
+  async function submitGrievance(event) {
+    event.preventDefault();
+    setError('');
+    const body = new FormData();
+    body.append('title', form.title);
+    body.append('category', form.category);
+    body.append('description', form.description);
+    body.append('priority', form.priority);
+    form.attachments.forEach((file) => body.append('attachments', file));
+    setLoading(true);
+    try {
+      const { grievance } = await apiRequest('/grievances', { method: 'POST', body });
+      const created = toCase(grievance);
+      setCases((items) => [created, ...items]);
+      setSelectedCase(created);
+      setModalOpen(false);
+      setForm({ title: '', category: 'Hostel & Facilities', description: '', priority: 'Medium', attachments: [] });
+      setSection('details');
+      showNotice(`Grievance submitted. Tracking ID: ${created.id}`);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updateStatus(event) {
+    event.preventDefault();
+    if (!selectedCase || !nextStatus) return;
+    setLoading(true);
+    setError('');
+    try {
+      const { grievance } = await apiRequest(`/grievances/${encodeURIComponent(selectedCase.id)}/status`, {
+        method: 'PATCH',
+        body: { status: nextStatus, note: statusNote }
+      });
+      const updated = toCase(grievance);
+      setSelectedCase(updated);
+      setCases((items) => items.map((item) => item.id === updated.id ? updated : item));
+      setStatusNote('');
+      setNextStatus(transitions[grievance.status]?.[0] || '');
+      showNotice('Grievance status updated.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function assignCase(event) {
+    event.preventDefault();
+    const officialId = event.currentTarget.elements.officialId.value;
+    if (!selectedCase || !officialId) return;
+    setLoading(true);
+    setError('');
+    try {
+      const { grievance } = await apiRequest(`/grievances/${encodeURIComponent(selectedCase.id)}/assign`, {
+        method: 'PATCH',
+        body: { officialId }
+      });
+      const updated = toCase(grievance);
+      setSelectedCase(updated);
+      setCases((items) => items.map((item) => item.id === updated.id ? updated : item));
+      showNotice('Official assigned to the grievance.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadAudit() {
+    if (!selectedCase) return;
+    setLoading(true);
+    setError('');
+    try {
+      setAudit(await apiRequest(`/grievances/${encodeURIComponent(selectedCase.id)}/audit`));
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createOfficial(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const { user: created } = await apiRequest('/admin/officials', { method: 'POST', body: officialForm });
+      setOfficials((items) => [...items, created]);
+      setOfficialForm({ name: '', email: '', password: '', department: '' });
+      showNotice('Official account created.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function savePolicy(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const updated = await apiRequest('/admin/escalation-policy', {
+        method: 'PATCH',
+        body: {
+          deadlineHours: Number(policyForm.deadlineHours),
+          escalateAfterHours: Number(policyForm.escalateAfterHours),
+          enabled: policyForm.enabled
+        }
+      });
+      setPolicy(updated.policy);
+      showNotice('Escalation policy saved.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function signOut() {
+    clearAuthToken();
+    setUser(null);
+    setCases([]);
+    setSelectedCase(null);
+    setPage('landing');
+    setSection('dashboard');
+    setError('');
+  }
+
+  if (sessionLoading) return <div className="integration-loading">Checking your session…</div>;
+  if (page === 'landing') return <LandingPage onLogin={() => { setError(''); setPage('login'); }} />;
+  if (page === 'login') return <><LoginPage onBackHome={() => setPage('landing')} onAuthenticated={(authenticatedUser) => { setUser(authenticatedUser); setPage('portal'); setSection('dashboard'); }} /><ErrorNotice error={error} onDismiss={() => setError('')} /></>;
+
+  const isAdministrator = user?.role === 'administrator';
+  const canUpdate = user?.role === 'official' || isAdministrator;
+  const statusOptions = selectedCase ? transitions[selectedCase.status] || [] : [];
+  const pageTitle = section === 'details' ? 'Grievance details' : section === 'grievances' ? 'My grievances' : section === 'administration' ? 'Administration' : 'Dashboard';
+
+  return (
+    <div className="app-shell">
+      <aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}>
+        <div className="sidebar-head"><div className="brand"><span className="brand-mark"><ShieldCheck size={22} /></span><span>grievease<span className="brand-dot">.</span></span></div><button className="icon-btn sidebar-close" onClick={() => setMobileNav(false)} aria-label="Close navigation"><X size={18} /></button></div>
+        <div className="workspace-label">WORKSPACE</div>
+        <div className="role-switch"><span className="role-avatar">{user?.name?.slice(0, 2).toUpperCase()}</span><div><b>{user?.name}</b><small>{roleLabel}</small></div></div>
+        <nav className="side-nav">
+          <span className="nav-label">MENU</span>
+          <button className={section === 'dashboard' ? 'active' : ''} onClick={() => { setSection('dashboard'); setMobileNav(false); }}><FileText size={18} /> Dashboard</button>
+          <button className={section === 'grievances' ? 'active' : ''} onClick={() => { setSection('grievances'); setMobileNav(false); }}><Search size={18} /> Grievances <span className="nav-count">{cases.length}</span></button>
+          {isAdministrator && <button className={section === 'administration' ? 'active' : ''} onClick={() => { setSection('administration'); setMobileNav(false); }}><UserPlus size={18} /> Administration</button>}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="help-card"><span className="help-icon"><ShieldCheck size={17} /></span><b>Private and traceable</b><p>Only authorized accounts can access grievance details.</p></div>
+          <button className="profile-row" onClick={signOut}><span className="profile-avatar">{user?.name?.slice(0, 2).toUpperCase()}</span><span><b>{user?.email}</b><small>Sign out</small></span><LogOut size={17} /></button>
+        </div>
+      </aside>
+
+      <div className="main-area">
+        <header className="topbar"><div className="topbar-left"><button className="icon-btn mobile-menu" onClick={() => setMobileNav(!mobileNav)} aria-label="Toggle navigation"><Menu /></button><div className="breadcrumb">Portal <span>/</span> <b>{pageTitle}</b></div></div><div className="topbar-actions"><span className="secure-label"><ShieldCheck size={14} /> {roleLabel}</span><Bell size={18} /></div></header>
+        <main className="page-content">
+          <ErrorNotice error={error} onDismiss={() => setError('')} />
+          {notice && <div className="integration-notice" role="status">{notice}</div>}
+          {loading && <div className="integration-progress">Working…</div>}
+
+          {section === 'dashboard' && (
+            <>
+              <div className="page-title-row"><div><div className="eyebrow">GRIEVEASE PORTAL</div><h1>Welcome, {user?.name}</h1><p>Track grievance progress and review the latest updates.</p></div>{user?.role === 'student' && <button className="btn btn-primary" onClick={() => setModalOpen(true)}><Plus size={17} /> New grievance</button>}</div>
+              <div className="stat-grid">
+                <StatCard icon={FileText} label="Total grievances" value={cases.length} />
+                <StatCard icon={Clock3} label="In progress" value={cases.filter((item) => !['Resolved', 'Rejected'].includes(item.status)).length} />
+                <StatCard icon={CheckCircle2} label="Resolved" value={cases.filter((item) => item.status === 'Resolved').length} />
+              </div>
+              <section className="panel list-panel"><div className="panel-head"><div><h2>Recent grievances</h2><p>Cases available to your account.</p></div><button className="text-button" onClick={() => setSection('grievances')}>View all <ArrowRight size={14} /></button></div><CaseTable cases={cases.slice(0, 5)} onOpen={openCase} /></section>
+            </>
+          )}
+
+          {section === 'grievances' && (
+            <>
+              <div className="page-title-row"><div><div className="eyebrow">YOUR RECORDS</div><h1>Grievances</h1><p>Search authorized cases and follow their progress.</p></div>{user?.role === 'student' && <button className="btn btn-primary" onClick={() => setModalOpen(true)}><Plus size={17} /> New grievance</button>}</div>
+              <section className="panel list-panel">
+                <div className="list-tools"><div className="search-box"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title, category or ticket ID" /></div><div className="filter-wrap"><select value={filter} onChange={(event) => setFilter(event.target.value)}><option>All</option>{[...new Set(cases.map((item) => item.statusLabel))].map((status) => <option key={status}>{status}</option>)}</select></div><span className="result-count">{visibleCases.length} cases</span></div>
+                <CaseTable cases={visibleCases} onOpen={openCase} />
+              </section>
+            </>
+          )}
+
+          {section === 'details' && selectedCase && (
+            <>
+              <button className="text-button integration-back" onClick={() => setSection('grievances')}><ArrowLeft size={15} /> Back to grievances</button>
+              <div className="page-title-row"><div><div className="eyebrow">{selectedCase.id}</div><h1>{selectedCase.title}</h1><p>{selectedCase.category} · Submitted {selectedCase.createdLabel}</p></div><span className={`badge ${selectedCase.statusLabel.toLowerCase().replaceAll(' ', '-')}`}>{selectedCase.statusLabel}</span></div>
+              <section className="panel integration-detail"><h2>Case information</h2><p className="integration-description">{selectedCase.description}</p><div className="integration-metadata"><div><small>Priority</small><strong>{selectedCase.priority}</strong></div><div><small>Assigned official</small><strong>{selectedCase.owner}</strong></div><div><small>Deadline</small><strong>{selectedCase.deadlineLabel}</strong></div><div><small>Student</small><strong>{selectedCase.studentName}</strong></div></div>
+                {selectedCase.attachments?.length > 0 && <div className="integration-attachments"><h3>Attachments</h3>{selectedCase.attachments.map((attachment) => <button key={attachment.downloadUrl} className="text-button" onClick={() => downloadFile(attachment.downloadUrl, attachment.originalName).catch((requestError) => setError(requestError.message))}>{attachment.originalName} <ArrowRight size={14} /></button>)}</div>}
+              </section>
+              {canUpdate && statusOptions.length > 0 && <section className="panel integration-action"><h2>Update status</h2><form onSubmit={updateStatus} className="integration-form"><label>Next status<select value={nextStatus} onChange={(event) => setNextStatus(event.target.value)} required>{statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}</select></label><label>Update note<textarea value={statusNote} onChange={(event) => setStatusNote(event.target.value)} maxLength={1000} /></label><button className="btn btn-primary" disabled={loading}>Save update</button></form></section>}
+              {isAdministrator && <section className="panel integration-action"><h2>Assign official</h2><form onSubmit={assignCase} className="integration-form inline"><label>Official<select name="officialId" required defaultValue={selectedCase.assignedTo?._id || ''}><option value="" disabled>Select an official</option>{officials.map((official) => <option value={official.id || official._id} key={official.id || official._id}>{official.name} · {official.department}</option>)}</select></label><button className="btn btn-outline" disabled={loading}>Assign</button></form><button className="text-button" onClick={loadAudit}>View audit history</button>{audit && <AuditTrail audit={audit} />}</section>}
+            </>
+          )}
+
+          {section === 'administration' && isAdministrator && (
+            <>
+              <div className="page-title-row"><div><div className="eyebrow">ADMINISTRATOR</div><h1>Administration</h1><p>Manage official accounts and grievance handling settings.</p></div></div>
+              <section className="panel integration-action"><h2>Create official account</h2><form onSubmit={createOfficial} className="integration-form"><label>Name<input required maxLength={120} value={officialForm.name} onChange={(event) => setOfficialForm({ ...officialForm, name: event.target.value })} /></label><label>College email<input required type="email" value={officialForm.email} onChange={(event) => setOfficialForm({ ...officialForm, email: event.target.value })} /></label><label>Temporary password<input required type="password" minLength={12} maxLength={128} value={officialForm.password} onChange={(event) => setOfficialForm({ ...officialForm, password: event.target.value })} /></label><label>Department<input required maxLength={120} value={officialForm.department} onChange={(event) => setOfficialForm({ ...officialForm, department: event.target.value })} /></label><button className="btn btn-primary" disabled={loading}>Create official</button></form><h3>Active officials</h3>{officials.map((official) => <div className="integration-official" key={official.id || official._id}><strong>{official.name}</strong><span>{official.department} · {official.email}</span></div>)}</section>
+              {policy && <section className="panel integration-action"><h2>Escalation policy</h2><form onSubmit={savePolicy} className="integration-form"><label>Initial deadline (hours)<input type="number" min="1" max="8760" required value={policyForm.deadlineHours} onChange={(event) => setPolicyForm({ ...policyForm, deadlineHours: event.target.value })} /></label><label>Escalate after (hours)<input type="number" min="1" max="8760" required value={policyForm.escalateAfterHours} onChange={(event) => setPolicyForm({ ...policyForm, escalateAfterHours: event.target.value })} /></label><label className="integration-checkbox"><input type="checkbox" checked={policyForm.enabled} onChange={(event) => setPolicyForm({ ...policyForm, enabled: event.target.checked })} /> Escalation enabled</label><button className="btn btn-primary" disabled={loading}>Save policy</button></form></section>}
+            </>
+          )}
+
+          {!loading && cases.length === 0 && section !== 'administration' && <div className="integration-empty"><FileText size={24} /><strong>No cases available</strong><span>{user?.role === 'student' ? 'Submit a grievance to begin tracking it here.' : 'Assigned cases will appear here when available.'}</span></div>}
+        </main>
+      </div>
+
+      {modalOpen && <div className="modal-backdrop" role="presentation"><div className="modal integration-modal" role="dialog" aria-modal="true" aria-labelledby="create-heading"><div className="modal-head"><div><span className="eyebrow">NEW SUBMISSION</span><h2 id="create-heading">Raise a grievance</h2><p>Your grievance will be linked to your signed-in account.</p></div><button className="icon-btn" onClick={() => setModalOpen(false)} aria-label="Close">×</button></div><form onSubmit={submitGrievance} className="grievance-form"><label>Grievance title<input required maxLength={160} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label><label>Category<select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}><option>Hostel & Facilities</option><option>Academic Services</option><option>Fees & Payments</option><option>Infrastructure</option><option>Accessibility</option><option>Other</option></select></label><label>Priority<select value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })}><option>Low</option><option>Medium</option><option>High</option><option>Urgent</option></select></label><label>Description<textarea required maxLength={10000} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label><label>Attachments (up to 5 files)<input type="file" multiple onChange={(event) => setForm({ ...form, attachments: Array.from(event.target.files || []).slice(0, 5) })} /></label>{error && <ErrorNotice error={error} onDismiss={() => setError('')} />}<div className="modal-actions"><button type="button" className="btn btn-outline" onClick={() => setModalOpen(false)}>Cancel</button><button type="submit" className="btn btn-primary" disabled={loading}>Submit grievance</button></div></form></div></div>}
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value }) {
+  return <div className="stat-card"><div className="stat-top"><span className="stat-icon"><Icon size={18} /></span></div><div className="stat-value">{String(value).padStart(2, '0')}</div><div className="stat-label">{label}</div></div>;
+}
+
+function ErrorNotice({ error, onDismiss }) {
+  if (!error) return null;
+  return <div className="integration-error" role="alert"><span>{error}</span><button type="button" onClick={onDismiss} aria-label="Dismiss error">×</button></div>;
+}
+
+function AuditTrail({ audit }) {
+  return <div className="integration-audit"><strong>Audit chain: {audit.valid ? 'Verified' : 'Invalid'}</strong>{audit.entries.map((entry) => <article key={entry._id}><b>{entry.action}</b><span>{entry.performedBy?.name || entry.actorLabel || 'System'} · {formatDate(entry.timestamp)}</span></article>)}</div>;
+}
+
 export default App;

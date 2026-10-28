@@ -6,6 +6,7 @@ node_modules/
 .npm
 package-lock.json
 .cache/
+uploads
 
 # FRONTEND
 dist/

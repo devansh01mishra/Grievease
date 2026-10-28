@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {
   ShieldCheck, Eye, EyeOff, ArrowRight, LockKeyhole, Mail,
-  GraduationCap, Building2, Settings2, CheckCircle2, CircleHelp,
-  Fingerprint, ChevronDown
+  GraduationCap, Building2, Settings2, CircleHelp, Fingerprint, CheckCircle2
 } from 'lucide-react';
+import { apiRequest, saveAuthToken } from './api.js';
 
 const roles = [
   { id: 'student', label: 'Student', detail: 'File and track your grievances', icon: GraduationCap },
@@ -11,19 +11,18 @@ const roles = [
   { id: 'admin', label: 'Administrator', detail: 'Oversee the grievance system', icon: Settings2 },
 ];
 
-function LoginPage({ onBackHome }) {
+function LoginPage({ onBackHome, onAuthenticated }) {
   const [role, setRole] = useState('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
-  const [demo, setDemo] = useState(false);
-  const [signedInAs, setSignedInAs] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const selectedRole = roles.find((item) => item.id === role);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setError('');
     if (!email.trim() || !password) {
@@ -35,32 +34,23 @@ function LoginPage({ onBackHome }) {
       return;
     }
 
-    // UI-only demonstration: this does NOT authenticate against a server.
-    // Replace this block with D's API call when the backend is ready.
-    setSignedInAs(selectedRole.label);
-    setDemo(true);
-  }
-
-  function resetForm() {
-    setDemo(false);
-    setSignedInAs('');
-    setPassword('');
-    setError('');
-  }
-
-  if (demo) {
-    return (
-      <main className="success-page">
-        <div className="success-card">
-          <div className="success-icon"><CheckCircle2 size={34} /></div>
-          <div className="eyebrow">FRONTEND DEMO</div>
-          <h1>Sign-in flow is working.</h1>
-          <p className="success-copy">The form validated successfully for the <strong>{signedInAs}</strong> role. This is a demonstration screen; no account has been authenticated yet.</p>
-          <div className="demo-note"><ShieldCheck size={19} /><span>When D's backend is ready, this step will call the real login API and the server will verify your identity and permissions.</span></div>
-          <button className="primary-button full-button" onClick={resetForm}>Back to sign in <ArrowRight size={17} /></button>
-        </div>
-      </main>
-    );
+    setSubmitting(true);
+    try {
+      const result = await apiRequest('/auth/login', {
+        method: 'POST',
+        body: { email: email.trim(), password }
+      });
+      if (result.user.role !== role && !(role === 'admin' && result.user.role === 'administrator')) {
+        setError(`This account is registered as ${roles.find((item) => item.id === result.user.role)?.label || result.user.role}. Choose that account type and try again.`);
+        return;
+      }
+      saveAuthToken(result.token, remember);
+      onAuthenticated?.(result.user);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -122,7 +112,7 @@ function LoginPage({ onBackHome }) {
 
               <label className="remember-row"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /><span className="custom-checkbox" /><span>Remember me on this device</span></label>
               {error && <p className="error-message" role="alert">{error}</p>}
-              <button type="submit" className="primary-button full-button">Sign in securely <ArrowRight size={18} /></button>
+              <button type="submit" className="primary-button full-button" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in securely'} <ArrowRight size={18} /></button>
             </form>
 
             <div className="security-note"><ShieldCheck size={17} /><span>Your sign-in is protected. Access is based on your assigned role.</span></div>

@@ -1,11 +1,12 @@
 import bcrypt from 'bcrypt';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { sign } from 'jsonwebtoken';
+import jsonwebtoken from 'jsonwebtoken';
 import User from '../models/user.js';
 import { HttpError } from '../utils/httpError.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordMinimumLength = 12;
+const { sign } = jsonwebtoken;
 
 function validateIdentity({ name, email, password }) {
   if (typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 120) {

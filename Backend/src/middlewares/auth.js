@@ -1,5 +1,7 @@
-import { verify } from 'jsonwebtoken';
+import jsonwebtoken from 'jsonwebtoken';
 import User from '../models/user.js';
+
+const { verify } = jsonwebtoken;
 
 export async function authenticate(req, res, next) {
   const authorization = req.headers.authorization;
