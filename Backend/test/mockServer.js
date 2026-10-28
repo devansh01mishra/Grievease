@@ -1,7 +1,7 @@
 import { pathToFileURL } from 'node:url';
 import MockDatabase from './mockdb.js';
 
-export async function startMockServer({ port = Number(process.env.PORT || 3000) } = {}) {
+export async function startMockServer({ port = Number(process.env.PORT) } = {}) {
   process.env.NODE_ENV = 'test';
   process.env.JWT_SECRET ||= 'local-mock-server-secret-change-before-deployment';
   process.env.FRONTEND_ORIGIN ||= 'http://localhost:5173';
@@ -29,7 +29,7 @@ export async function startMockServer({ port = Number(process.env.PORT || 3000) 
     ]);
 
     const server = await new Promise((resolve, reject) => {
-      const instance = app.listen(port, () => resolve(instance));
+      const instance = app.listen(port || 3000, () => resolve(instance));
       instance.once('error', reject);
     });
 

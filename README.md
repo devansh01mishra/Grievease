@@ -1,53 +1,97 @@
-# GRIEVEASE (A platform for managing grievances)
+# Grievease
 
-## DESCRIPTION 
+Grievease is a campus grievance-management application. Students can submit
+grievances and track their progress. Authorized college officials can review
+assigned cases and record status updates, while administrators can manage
+official accounts, assignments, and escalation settings.
 
-Grievease is a proposed system for students to file grievances and track their progress, while authorized college
-officials can view, assign and resolve them. Each complaint gets a unique ticket ID, and important status changes are
-noted so that the history of the complaint is easier to trace. The goal is to make the process more transparent and
-accountable without exposing the contents of private complaints in the public sphere.
+## Project layout
 
-## UML DIAGRAM
+- `Frontend/` — React and Vite web application.
+- `Backend/` — Express API, authentication, grievance services, and MongoDB
+  models.
+- `Backend/test/` — Workflow, service, and HTTP integration tests. Tests use an
+  in-memory mock database and do not require MongoDB.
 
-![Diagramatic representation of Users and their functions](uml.png)
+## Run locally with the mock database
 
-## FRONTEND AND BACKEND DEPLOYMENT
+This mode lets you use the frontend and backend together without installing or
+configuring MongoDB. Open two terminals from the project root:
 
-The frontend (`Frontend`) and API (`Backend`) deploy as separate services.
-Use `.env.example` as the deployment template and configure the variables in
-each hosting provider. Local `.env` files use the corresponding localhost
-origins and are ignored by Git.
+```powershell
+npm.cmd --prefix Backend run dev:mock
+npm.cmd --prefix Frontend run dev
+```
 
-- Frontend `VITE_API_BASE_URL`: the backend's public URL, including `/api`
-  (for example, `https://api.example.com/api`). This is a Vite build-time
-  variable, so configure it in the frontend service before building.
-- Backend `FRONTEND_ORIGIN`: the exact public frontend origin, without a path
-  (for example, `https://grievease.example.com`). Multiple origins can be
-  comma-separated.
-- Backend `MONGO_URI` and `JWT_SECRET`: configure the production database
-  connection and a private random secret of at least 32 characters. Do not
-  commit `.env` files or put backend secrets in frontend variables.
-- Backend `PORT`: use the port provided by the hosting service when applicable.
+Open the frontend URL printed by Vite (normally `http://localhost:5173`).
+The mock API runs on port `3000` by default.
 
-The frontend calls the backend directly in this deployment setup. The backend
-allows browser requests only from the configured frontend origin; production
-startup requires `FRONTEND_ORIGIN`. Replace the example hostnames with the
-actual URLs assigned by your deployment providers.
+### Demo accounts
 
-Run the API from `Backend` with `npm run dev`, and run the frontend from
-`Frontend` with `npm run dev`.
+| Role | Email | Password |
+|---|---|---|
+| Student | `student@example.test` | `demo-password-123` |
+| Administrator | `admin@example.test` | `admin-password-123` |
 
-Run backend tests with `npm test` from `Backend`. Core service tests use the
-in-memory `Backend/test/mockdb.js` adapter and do not require MongoDB.
+### Try the administrator workflow
 
-To try the frontend and backend together without configuring or starting
-MongoDB, run `npm run dev:mock` from `Backend` and `npm run dev` from
-`Frontend`. Sign in with `student@example.test` and `demo-password-123`.
-To test the admin workflow in the frontend, select Administrator and sign in
-with `admin@example.test` and `admin-password-123`. Create an official from the
-Administration page, then assign a grievance to that account. Sign out and
-sign in as the newly created official to review and resolve the assigned case.
-Grievances created in this mode are stored only in process memory and disappear
-when the mock API stops. This mode is for local testing only, not deployment.
-The HTTP integration tests, including admin assignment and official resolution,
-run against the same mock API automatically with `npm test` from `Backend`.
+1. Sign in as the administrator and open **Administration**.
+2. Create an official account with a department and a password of at least 12
+   characters.
+3. Sign out and sign in as the demo student. Submit a grievance.
+4. Sign back in as the administrator and assign the grievance to the official.
+5. Sign in with the official account you created. Update the grievance through
+   the permitted workflow: **Under Review → In Progress → Resolved**.
+
+Mock data exists only in memory and is removed when the mock API stops. Mock
+credentials and the mock server are for local testing only; do not deploy them
+or use these credentials with a production service.
+
+## Run with MongoDB
+
+1. Copy `Backend/.env.example` to `Backend/.env` and set `MONGO_URI` and a
+   private `JWT_SECRET` of at least 32 characters.
+2. Copy `Frontend/.env.example` to `Frontend/.env` and set
+   `VITE_API_BASE_URL=http://localhost:3000/api`.
+3. Start the API and frontend in separate terminals:
+
+```powershell
+npm.cmd --prefix Backend run dev
+npm.cmd --prefix Frontend run dev
+```
+
+## Deploy frontend and backend separately
+
+Configure these values in the corresponding hosting services. The frontend API
+URL is embedded at build time, so set it before building the frontend.
+
+| Service | Variable | Value |
+|---|---|---|
+| Frontend | `VITE_API_BASE_URL` | Backend public URL including `/api`, e.g. `https://api.example.com/api` |
+| Backend | `FRONTEND_ORIGIN` | Exact public frontend origin, without a path, e.g. `https://app.example.com` |
+| Backend | `MONGO_URI` | Production MongoDB connection string |
+| Backend | `JWT_SECRET` | Private random secret, at least 32 characters |
+| Backend | `PORT` | Port provided by the hosting service, if applicable |
+
+The backend permits browser requests only from the origin(s) configured in
+`FRONTEND_ORIGIN`. Separate multiple allowed origins with commas. Replace the
+placeholder domains in the `.env.example` files with your deployment URLs.
+Never commit `.env` files, expose backend secrets in frontend variables, or
+use mock credentials in production.
+
+## Tests
+
+Run the backend test suite from the project root:
+
+```powershell
+npm.cmd --prefix Backend test
+```
+
+The suite covers grievance workflow rules, core services, and HTTP integration
+flows including login, CORS preflight, grievance submission, administrator
+official creation and assignment, and official status updates. It runs against
+the in-memory mock database and does not connect to MongoDB.
+
+## UML diagram
+
+![Diagram showing Grievease users and their functions](uml.png)
